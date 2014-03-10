@@ -1,0 +1,72 @@
+#!/bin/bash
+# This file is managed by puppet, any changes will be overwritten.
+
+DEPLOY_TO=<%= @repo_dir %>
+LIVE_DIR=<%= @deploy_dir %>
+
+echo -e "\033[1;32m==> Extracting application to <%= @name %>\033[0m"
+cd $DEPLOY_TO && git archive $1 | tar -C $LIVE_DIR -x
+cd $LIVE_DIR
+
+# ok we're in the rails app directory now
+echo -e "\033[1;32m==> Installing gems\033[0m"
+bundle install --binstubs --deployment
+rc=$?
+if [[ $rc != 0 ]] ; then
+  echo -e "\033[1;31m==! Looks like your bundle could not be installed.\033[0m"
+  exit $rc
+fi
+
+# inspect rake file
+echo -e "\033[1;32m==> Inspecting Gemfile\033[0m"
+bundle=$(bundle show)
+
+
+if [ -e /etc/hrt/database.yml ]
+then
+  echo -e "\033[1;32m==> Copying database.yml from /etc/hrt\033[0m"
+  cp -f /etc/hrt/database.yml ./config/database.yml
+else
+  echo -e "\033[1;31m==! Couldn't file database.yml in /etc/hrt.\033[0m"
+  exit 1
+fi
+
+
+# inspect rake file
+echo -e "\033[1;32m==> Inspecting Rakefile\033[0m"
+rake=$(bundle exec rake -D | grep -e '^[a-zA-Z]')
+
+echo $rake | grep db:migrate > /dev/null
+# run out migrations
+if [[ $? == 0 ]] ; then
+  echo -e "\033[1;32m==> Doing the database migrations\033[0m"
+  bundle exec rake db:migrate RAILS_ENV=<%= @env %>
+  rc=$?
+  if [[ $rc != 0 ]] ; then
+    echo -e "\033[1;31m==! Looks like your migrations could not be completed.\033[0m"
+    exit $rc
+  fi
+fi
+
+# and the tmp folder
+if ! [ -d tmp ]
+then
+  echo -e "\033[1;32m==> Creating tmp directory\033[0m"
+  mkdir -p tmp/cache
+fi
+
+# if whenever is installed, try run it
+echo $bundle | grep whenever > /dev/null
+rc=$?
+if [[ $rc == 0 ]] ; then
+  echo -e "\033[1;32m==> Detected 'whenever' gem\033[0m"
+  echo -e "\033[1;32m==> Updating crontab\033[0m"
+  bundle exec ./bin/whenever --update-crontab
+fi
+#bundle exec whenever --update
+
+# restart the application
+echo -e "\033[1;32m==> Restarting passenger\033[0m"
+touch tmp/restart.txt
+
+

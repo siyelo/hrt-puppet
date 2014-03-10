@@ -1,0 +1,72 @@
+26-08-2013
+==========
+
+installed vagrant via the website
+
+    vagrant init precise64 http://files.vagrantup.com/precise64.box
+
+box uname is 
+
+    vagrant@precise64:~$ uname -a
+    Linux precise64 3.2.0-23-generic #36-Ubuntu SMP Tue Apr 10 20:39:51 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+
+found a bootstrap script here:
+    
+    https://raw.github.com/hashicorp/puppet-bootstrap/master/ubuntu.sh
+
+might be useful on first deploy on a blank box, since Vagrant handles 
+bootstrapping new VMs
+
+ruby-shadow gem is needed for setting passwords on ubuntu users
+
+psql ident needs a user of the same name to match
+
+should look at the locale stuff I keep seeing from psql.
+
+27-08-2013
+==========
+
+have a look at building out these sections into modules.
+
+madness getting apt to be in a working state before provisioning.
+
+28-08-2013
+==========
+
+unicorn instead of passenger because of the insane build requirements
+for nginx, simpler doesn't mean simpler.
+
+git clone https://stuartc@github.com/siyelo/proxnetpro.git
+
+trying out unicorn, made a config.ru file.
+
+need a place to put the unicorn socket file, var/run belongs
+to root. so gonna make a folder in there for unicorn
+and name instances by their app name
+
+29-08-2013
+==========
+
+trying out a unicorn module for puppet -- screw that noise. doing it myself
+using foreman to generate upstart scripts for me:
+
+    foreman export upstart --concurrency="worker=3,web=1" --app=proxnetpro --user=proxnetpro /etc/init
+
+right now the unicorn config lives in the application
+and so does the procfile... this ties the app to the environment.
+this will be the case until a better solution comes along.
+
+03-10-2013
+==========
+
+going to switch to passenger, since it's available on apt now.
+
+    gpg --keyserver keyserver.ubuntu.com --recv-keys 561F9B9CAC40B2F7
+    gpg --armor --export 561F9B9CAC40B2F7 | sudo apt-key add -
+
+    sudo apt-get install apt-transport-https # already installed
+
+    deb https://oss-binaries.phusionpassenger.com/apt/passenger precise main
+
+    apt get install passenger
+

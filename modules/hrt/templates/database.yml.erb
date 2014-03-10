@@ -1,0 +1,35 @@
+development: &DEVELOPMENT
+  adapter: postgresql
+  database: hrt
+  #username: hrt
+  #password: password
+  #host: 192.168.0.194
+  # schema_search_path: "public,merchants"
+  template: template0
+  pool: 5
+  allow_concurrency: true
+
+test: &TEST
+  adapter: postgresql
+  database: hrt
+  #username: hrt
+  #password: password
+  #host: 192.168.0.194
+  # schema_search_path: "merchants"
+  template: template0
+  pool: 6
+
+production:
+  <<: *DEVELOPMENT
+
+service: &SERVICE
+  <<: *DEVELOPMENT
+
+service_development:
+  <<: *DEVELOPMENT
+
+worker: &SERVICE
+  <<: *DEVELOPMENT
+
+worker_development:
+  <<: *DEVELOPMENT

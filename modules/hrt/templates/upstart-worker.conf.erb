@@ -1,0 +1,5 @@
+start on starting hrt-worker
+stop on stopping hrt-worker
+respawn
+
+exec su - hrt -c 'cd /home/hrt/app; ./bin/rake jobs:work >> /var/log/hrt/<%= @title %>.log 2>&1'

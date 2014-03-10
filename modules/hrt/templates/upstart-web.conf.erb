@@ -1,0 +1,36 @@
+# http://stackoverflow.com/questions/5489889/how-can-i-keep-a-passenger-standalone-up-even-after-a-restart
+
+start on starting hrt-web
+stop on stopping hrt-web
+
+# Automatically restart process if crashed
+respawn
+
+# When to stop the service
+stop on runlevel [016]
+
+# Essentially lets upstart know the process will detach itself to the background
+# expect fork
+
+# Run before process
+pre-start script
+end script
+
+env WORKDIR=<%= @approot %>
+env APPUSER=<%= @user %>
+env SOCKET=<%= @socket %>
+env LOGFILE=<%= @logdir %>/<%= @nginx_upstream %>.log
+env HOME=<%= @homedir %>
+
+env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+env ENV=production
+
+# Start the process
+script
+
+  set -x
+
+  cd $WORKDIR
+  passenger start --user $APPUSER --socket $SOCKET --log-file $LOGFILE
+
+end script
